@@ -1,0 +1,41 @@
+version: "3.9"
+
+x-app:
+  &app
+  build:
+    dockerfile: ./Dockerfile
+    context: .
+    args:
+      - DOCKER_USER_ID=${DOCKER_USER_ID:-5001}
+  depends_on:
+    - postgres
+  env_file: ./.env
+
+services:
+  app:
+    <<: *app
+    container_name: fastapi_cmenu_d
+    volumes:
+      - ./:/app
+    hostname: app
+    command: bash -c "alembic upgrade head && uvicorn --host 0.0.0.0 --port 80 --reload app.main:app"
+    # command: bash -c "uvicorn --host 0.0.0.0 --port 80 --reload app.main:app"
+    ports:
+      - '8000:80'
+
+  postgres:
+    image: postgres:13.3
+    hostname: postgres_cmenu_d
+    container_name: postgres_cmenu_d
+    env_file: ./.env
+    environment:
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
+volumes:
+  db-data:
