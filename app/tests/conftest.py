@@ -20,9 +20,6 @@ def event_loop():
 
 @pytest.fixture(scope="function")
 async def client() -> AsyncGenerator[AsyncClient, None]:
-    """
-    Какое-то описание метода
-    """
     async with AsyncClient(app=app, base_url="http://localhost:8000/api/v1") as ac:
         yield ac
 
