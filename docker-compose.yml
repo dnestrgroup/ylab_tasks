@@ -23,12 +23,14 @@ services:
     ports:
       - '8000:80'
   
+
   pytest:
     <<: *app
     container_name: pytest_container
     command: bash -c "alembic upgrade head && pytest"
     volumes:
       - ./:/app
+
 
   postgres:
     image: postgres:15.1-alpine
@@ -43,6 +45,14 @@ services:
       - db-data:/var/lib/postgresql/data
     ports:
       - '5432:5432'
+  
+
+  redis:
+    image: redis:7
+    container_name: redis_cmenu_d
+    command: --port 6378
+    ports:
+      - '6378:6378'
 
 volumes:
   db-data:
