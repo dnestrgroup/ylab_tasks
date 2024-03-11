@@ -4,6 +4,7 @@ from sqlalchemy import delete, func, insert, select, update
 from app.db.base import get_db
 from app.models.models import Dishes, MainMenu, SubMenu
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.redis.cache_menu import MenuService
 from app.schemas.schemas import CreateDishesRequest, CreateMenuRequest, CreateSubMenuRequest, DishesResponse, MenuResponse, SubMenuResponse
 
 
@@ -12,21 +13,11 @@ router = APIRouter()
 ################################
 #      Endpoints for menus     #
 ################################
-@router.get("/api/v1/menus", response_model=List[MenuResponse])
-async def get_menus(db: AsyncSession = Depends(get_db)):
-    query = select(MainMenu)
-    list_menu = []
-    for menu in (await db.execute(query)).scalars():
-        list_menu.append(
-            MenuResponse(
-                id=str(menu.id),
-                title=menu.title,
-                description=menu.description,
-                submenus_count=None, 
-                dishes_count=None,
-            )
-        )
-    return list_menu
+@router.get('/api/v1/menus', response_model=list[MenuResponse], summary='Метод получения списка меню')
+async def get_menus(db: AsyncSession = Depends(get_db)) -> list[MenuResponse]:
+    menu_service = MenuService(db=db)
+    response = await menu_service.get_list()
+    return response
 
 
 @router.get("/api/v1/menus/{id}", response_model=MenuResponse)
@@ -60,14 +51,8 @@ async def get_menu(id: int, db: AsyncSession = Depends(get_db)):
 
 @router.post("/api/v1/menus", response_model=MenuResponse,  status_code=201)
 async def create_menu(data: CreateMenuRequest, db: AsyncSession = Depends(get_db)) -> MenuResponse:
-    query = (
-        insert(MainMenu)
-        .values(title=data.title, description=data.description)
-        .returning(MainMenu.id, MainMenu.title, MainMenu.description)
-    )
-    result = (await db.execute(query)).fetchone()
-    await db.commit()
-    return MenuResponse(id=str(result[0]), title=result[1], description=result[2], submenus_count=None, dishes_count=None)
+    menu_service = MenuService(db=db)
+    return await menu_service.create_menu(data=data)
 
 
 @router.patch("/api/v1/menus/{id}", response_model=MenuResponse)
@@ -87,6 +72,5 @@ async def patch_menu(
 
 @router.delete("/api/v1/menus/{id}")
 async def delete_menu(id: int, db: AsyncSession = Depends(get_db)):
-    query = delete(MainMenu).where(MainMenu.id == id)
-    await db.execute(query)
-    await db.commit()
+    menu_service = MenuService(db=db)
+    await menu_service.delete_menu(id=id)

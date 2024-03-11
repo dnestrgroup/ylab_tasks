@@ -4,17 +4,17 @@ from app.db.base import Base
 
 class MainMenu(Base):
     __tablename__ = "main_menu"
-    id = Column(Integer, primary_key=True)
-    title = Column(String, nullable=False)
-    description = Column(String, nullable=False)
+    id:int = Column(Integer, primary_key=True)
+    title:str = Column(String, nullable=False)
+    description:str = Column(String, nullable=False)
 
 
 class SubMenu(Base):
     __tablename__ = "sub_menu"
-    id = Column(Integer, primary_key=True)
-    title = Column(String, nullable=False)
-    description = Column(String, nullable=False)
-    main_menu_id = Column(
+    id:int = Column(Integer, primary_key=True)
+    title:str = Column(String, nullable=False)
+    description:str = Column(String, nullable=False)
+    main_menu_id:int = Column(
         Integer, ForeignKey("main_menu.id", ondelete="CASCADE"), nullable=False
     )
 

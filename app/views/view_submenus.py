@@ -4,6 +4,7 @@ from sqlalchemy import delete, func, insert, select, update
 from app.db.base import get_db
 from app.models.models import Dishes, MainMenu, SubMenu
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.redis.cache_submenu import SubMenuService
 from app.schemas.schemas import CreateDishesRequest, CreateMenuRequest, CreateSubMenuRequest, DishesResponse, MenuResponse, SubMenuResponse
 
 
@@ -16,13 +17,9 @@ router = APIRouter()
 
 @router.get("/api/v1/menus/{id}/submenus", response_model=List[SubMenuResponse])
 async def get_submenus(id: int, db: AsyncSession = Depends(get_db)):
-    query = select(SubMenu).filter(SubMenu.main_menu_id == id)
-    list_menu = []
-    for menu in (await db.execute(query)).scalars():
-        list_menu.append(
-            SubMenuResponse(id=str(menu.id), title=menu.title, description=menu.description, dishes_count=None)
-        )
-    return list_menu
+    submenu_service = SubMenuService(db=db)
+    response = await submenu_service.get_list_submenus(id_menu=id)
+    return response
 
 
 @router.get(
@@ -73,20 +70,13 @@ async def patch_submenu(
 async def create_submenu(
     data: CreateSubMenuRequest, id_menu: int, db: AsyncSession = Depends(get_db)
 ) -> SubMenuResponse:
-    query = (
-        insert(SubMenu)
-        .values(title=data.title, description=data.description, main_menu_id=id_menu)
-        .returning(SubMenu.id, SubMenu.title, SubMenu.description)
-    )
-    result = (await db.execute(query)).fetchone()
-    await db.commit()
-    return SubMenuResponse(id=str(result[0]), title=result[1], description=result[2], dishes_count=None)
+    submenu_service = SubMenuService(db=db)
+    return await submenu_service.create_submenu(data=data, id_menu=id_menu)
 
 
 @router.delete("/api/v1/menus/{id_menu}/submenus/{id_submenu}")
 async def delete_submenu(
     id_menu: int, id_submenu: int, db: AsyncSession = Depends(get_db)
 ):
-    query = delete(SubMenu).where(SubMenu.id == id_submenu)
-    await db.execute(query)
-    await db.commit()
+    submenu_service = SubMenuService(db=db)
+    await submenu_service.delete_submenu(id_menu=id_menu, id_submenu=id_submenu)
