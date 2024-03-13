@@ -54,5 +54,40 @@ services:
     ports:
       - '6378:6378'
 
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    env_file:
+      - .env
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+
+  celery_worker:
+    container_name: celery_worker_d
+    build:
+      dockerfile: ./Dockerfile
+      context: ./
+    command: celery -A app.celery.celery worker --pool=prefork --concurrency=8 --loglevel=info
+    volumes:
+      - ./:/app/
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+
+  celery_beat:
+    container_name: celery_beat_d
+    build:
+      dockerfile: ./Dockerfile
+      context: ./
+    command: celery -A app.celery.celery beat
+    volumes:
+      - ./:/app/
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+
 volumes:
   db-data:
