@@ -38,7 +38,7 @@ class SubMenuService:
         repo_sm = RepositoriesSubMenus(self.db)
         res = await repo_sm.update(id_menu, id_submenu, data)
         response_sm = SubMenuResponse(
-            id=res.id,
+            id=str(res.id),
             title=res.title,
             description=res.description,
             dishes_count=0)

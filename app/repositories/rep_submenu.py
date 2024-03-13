@@ -59,7 +59,7 @@ class RepositoriesSubMenus:
         )
         res = (await self.db.execute(query)).fetchone()
         await self.db.commit()
-        return SubMenuResponse(id=res[0], title=res[1], description=res[2])
+        return SubMenuResponse(id=str(res[0]), title=res[1], description=res[2], dishes_count=None)
 
     async def delete(self, id_submenu: int):
         query = delete(SubMenu).where(SubMenu.id == id_submenu)

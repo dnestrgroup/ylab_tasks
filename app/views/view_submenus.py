@@ -28,20 +28,9 @@ async def get_submenus(id: int, db: AsyncSession = Depends(get_db)):
 async def get_submenu(
     id_menu: int, id_submenu: int, db: AsyncSession = Depends(get_db)
 ):
-    query = select(SubMenu).filter(SubMenu.id == id_submenu)
-    res = (await db.execute(query)).scalar_one_or_none()
-    if res is not None:
-        dishes_query = select(func.count(Dishes.id)).where(
-            Dishes.sub_menu_id == id_submenu
-        )
-        dishes_count = (await db.execute(dishes_query)).scalar()
-        return SubMenuResponse(
-            id=str(res.id),
-            title=res.title,
-            description=res.description,
-            dishes_count=dishes_count,
-        )
-    raise HTTPException(status_code=404, detail="submenu not found")
+    submenu_service = SubMenuService(db=db)
+    response = await submenu_service.get_one_submenu_by_id(id_menu=id_menu, id_submenu=id_submenu)
+    return response
 
 
 @router.patch(
@@ -53,15 +42,9 @@ async def patch_submenu(
     data: CreateSubMenuRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    query = (
-        update(SubMenu)
-        .where(SubMenu.id == id_submenu)
-        .values(title=data.title, description=data.description)
-        .returning(SubMenu.id, SubMenu.title, SubMenu.description)
-    )
-    res = (await db.execute(query)).fetchone()
-    await db.commit()
-    return SubMenuResponse(id=str(res[0]), title=res[1], description=res[2], dishes_count=None)
+    submenu_service = SubMenuService(db=db)
+    response = await submenu_service.update_submenu(data=data, id_menu=id_menu, id_submenu=id_submenu)
+    return response
 
 
 @router.post(
