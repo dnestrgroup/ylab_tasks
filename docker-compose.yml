@@ -68,7 +68,7 @@ services:
     build:
       dockerfile: ./Dockerfile
       context: ./
-    command: celery -A app.celery.celery worker --pool=prefork --concurrency=8 --loglevel=info
+    command: celery -A app.celery worker --pool=prefork --concurrency=8 --loglevel=info
     volumes:
       - ./:/app/
     env_file:
@@ -81,7 +81,7 @@ services:
     build:
       dockerfile: ./Dockerfile
       context: ./
-    command: celery -A app.celery.celery beat
+    command: celery -A app.celery beat
     volumes:
       - ./:/app/
     env_file:
