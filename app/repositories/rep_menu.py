@@ -1,8 +1,9 @@
-from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy import delete, func, insert, join, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.models import Dishes, MainMenu, SubMenu
 from app.schemas.schemas import CreateMenuRequest, MenuResponse
+from sqlalchemy.orm import aliased
 
 class RepositoriesMenus:
     def __init__(self, db: AsyncSession = None):
@@ -71,3 +72,53 @@ class RepositoriesMenus:
                 )
             )
         return list_menu
+
+
+    async def get_all(self):
+        main_menu_alias = aliased(MainMenu)
+        sub_menu_alias = aliased(SubMenu)
+        dishes_alias = aliased(Dishes)
+        sub_menu_alias_2 = aliased(SubMenu)
+
+        query = select(main_menu_alias, sub_menu_alias, dishes_alias).select_from(
+            join(main_menu_alias, sub_menu_alias, main_menu_alias.id == sub_menu_alias.main_menu_id)
+        ).select_from(
+            join(sub_menu_alias_2, dishes_alias, sub_menu_alias_2.id == dishes_alias.sub_menu_id)
+        ).where(
+            sub_menu_alias.main_menu_id == main_menu_alias.id,
+            dishes_alias.sub_menu_id == sub_menu_alias_2.id
+        )
+        result = (await self.db.execute(query)).all()
+        dict_menus = []
+
+        for menu, sub_menu, dishes in result:
+            menu_title = menu.title
+            sub_menu_title = sub_menu.title
+
+            dish_dict = {
+                'Title': dishes.title,
+                'Description': dishes.description,
+                'Price': str(dishes.price),
+            }
+            menu_found = False
+            for menu_dict in dict_menus:
+                if menu_title in menu_dict:
+                    menu_found = True
+                    sub_menu_found = False
+                    for sub_menu_dict in menu_dict[menu_title]:
+                        if sub_menu_title in sub_menu_dict:
+                            sub_menu_found = True
+                            if dishes.sub_menu_id == sub_menu.id and menu.id == sub_menu.main_menu_id:
+                                sub_menu_dict[sub_menu_title].append(dish_dict)
+                            break
+                    if not sub_menu_found:
+                        if dishes.sub_menu_id == sub_menu.id and menu.id == sub_menu.main_menu_id:
+                            sub_menu_dict = {sub_menu_title: []} if not sub_menu_found else sub_menu_dict
+                            sub_menu_dict[sub_menu_title].append(dish_dict)
+                            menu_dict[menu_title].append(sub_menu_dict)
+                    break
+            if not menu_found:
+                if dishes.sub_menu_id == sub_menu.id and menu.id == sub_menu.main_menu_id:
+                    dict_menus.append({menu_title: [{sub_menu_title: [dish_dict]}]})
+
+        return dict_menus

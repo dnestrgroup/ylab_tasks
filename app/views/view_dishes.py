@@ -1,11 +1,12 @@
 from typing import List
-from fastapi import APIRouter, Depends,  HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends,  HTTPException
 from sqlalchemy import delete, func, insert, select, update
 from app.db.base import get_db
 from app.models.models import Dishes, MainMenu, SubMenu
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.redis.cache_dishes import DishesService
 from app.schemas.schemas import CreateDishesRequest, CreateMenuRequest, CreateSubMenuRequest, DishesResponse, MenuResponse, SubMenuResponse
+from app.services.cache_invalidation import cache_invalidation
 
 
 router = APIRouter()
@@ -42,6 +43,7 @@ async def get_dish(
     response_model=DishesResponse,
 )
 async def patch_dish(
+    background_tasks: BackgroundTasks,
     id_menu: int,
     id_submenu: int,
     id_dishes: int,
@@ -50,6 +52,7 @@ async def patch_dish(
 ):
     dishes_service = DishesService(db=db)
     response = await dishes_service.update_dish(id_menu=id_menu, id_submenu=id_submenu, id_dishes=id_dishes, data=data)
+    background_tasks.add_task(cache_invalidation, '/api/v1/menus/' + str(id_menu) + '/submenus/' + str(id_submenu) + '/dishes/' + str(id_dishes))
     return response
 
 
@@ -72,7 +75,8 @@ async def create_dish(
     "/api/v1/menus/{id_menu}/submenus/{id_submenu}/dishes/{id_dishes}",
 )
 async def delete_dishes(
-    id_menu: int, id_submenu: int, id_dishes: int, db: AsyncSession = Depends(get_db)
+    background_tasks: BackgroundTasks, id_menu: int, id_submenu: int, id_dishes: int, db: AsyncSession = Depends(get_db)
 ):
     submenu_service = DishesService(db=db)
+    background_tasks.add_task(cache_invalidation, '/api/v1/menus/' + str(id_menu) + '/submenus/' + str(id_submenu) + '/dishes/' + str(id_dishes))
     await submenu_service.delete_dish(id_menu=id_menu, id_submenu=id_submenu, id_dishes=id_dishes)

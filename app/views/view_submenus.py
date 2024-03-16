@@ -1,11 +1,12 @@
 from typing import List
-from fastapi import APIRouter, Depends,  HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends,  HTTPException
 from sqlalchemy import delete, func, insert, select, update
 from app.db.base import get_db
 from app.models.models import Dishes, MainMenu, SubMenu
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.redis.cache_submenu import SubMenuService
 from app.schemas.schemas import CreateDishesRequest, CreateMenuRequest, CreateSubMenuRequest, DishesResponse, MenuResponse, SubMenuResponse
+from app.services.cache_invalidation import cache_invalidation
 
 
 router = APIRouter()
@@ -37,6 +38,7 @@ async def get_submenu(
     "/api/v1/menus/{id_menu}/submenus/{id_submenu}", response_model=SubMenuResponse
 )
 async def patch_submenu(
+    background_tasks: BackgroundTasks,
     id_menu: int,
     id_submenu: int,
     data: CreateSubMenuRequest,
@@ -44,6 +46,7 @@ async def patch_submenu(
 ):
     submenu_service = SubMenuService(db=db)
     response = await submenu_service.update_submenu(data=data, id_menu=id_menu, id_submenu=id_submenu)
+    background_tasks.add_task(cache_invalidation, '/api/v1/menus/' + str(id_menu) + '/submenus/' + str(id_submenu))
     return response
 
 
@@ -59,7 +62,8 @@ async def create_submenu(
 
 @router.delete("/api/v1/menus/{id_menu}/submenus/{id_submenu}")
 async def delete_submenu(
-    id_menu: int, id_submenu: int, db: AsyncSession = Depends(get_db)
+    background_tasks: BackgroundTasks, id_menu: int, id_submenu: int, db: AsyncSession = Depends(get_db)
 ):
     submenu_service = SubMenuService(db=db)
+    background_tasks.add_task(cache_invalidation, '/api/v1/menus/' + str(id_menu) + '/submenus/' + str(id_submenu))
     await submenu_service.delete_submenu(id_menu=id_menu, id_submenu=id_submenu)

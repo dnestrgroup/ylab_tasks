@@ -1,13 +1,14 @@
 from typing import List
-from fastapi import APIRouter, Depends,  HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends,  HTTPException
 from sqlalchemy import delete, func, insert, select, update
 from app.db.base import get_db
 from app.models.models import Dishes, MainMenu, SubMenu
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.redis.cache_menu import MenuService
+from app.repositories.rep_menu import RepositoriesMenus
 from app.schemas.schemas import CreateDishesRequest, CreateMenuRequest, CreateSubMenuRequest, DishesResponse, MenuResponse, SubMenuResponse
+from app.services.cache_invalidation import cache_invalidation
 from app.services.upload_menu import UploadMenu
-
 
 router = APIRouter()
 
@@ -22,6 +23,13 @@ async def start(db: AsyncSession = Depends(get_db)) -> str:
     upload_menu = UploadMenu(db=db)
     await upload_menu.run()
     return 'start'
+
+
+@router.get('/all')
+async def get_menus(db: AsyncSession = Depends(get_db)):
+    menu_service = RepositoriesMenus(db=db)
+    response = await menu_service.get_all()
+    return response
 
 
 @router.get('/api/v1/menus', response_model=list[MenuResponse], summary='Метод получения списка меню')
@@ -68,7 +76,7 @@ async def create_menu(data: CreateMenuRequest, db: AsyncSession = Depends(get_db
 
 @router.patch("/api/v1/menus/{id}", response_model=MenuResponse)
 async def patch_menu(
-    id: int, data: CreateMenuRequest, db: AsyncSession = Depends(get_db)
+    background_tasks: BackgroundTasks, id: int, data: CreateMenuRequest, db: AsyncSession = Depends(get_db)
 ):
     query = (
         update(MainMenu)
@@ -78,10 +86,12 @@ async def patch_menu(
     )
     res = (await db.execute(query)).fetchone()
     await db.commit()
+    background_tasks.add_task(cache_invalidation, '/api/v1/menus/' + str(id))
     return MenuResponse(id=str(res[0]), title=res[1], description=res[2], submenus_count=None, dishes_count=None)
 
 
 @router.delete("/api/v1/menus/{id}")
-async def delete_menu(id: int, db: AsyncSession = Depends(get_db)):
+async def delete_menu(background_tasks: BackgroundTasks, id: int, db: AsyncSession = Depends(get_db)):
     menu_service = MenuService(db=db)
+    background_tasks.add_task(cache_invalidation, '/api/v1/menus/' + str(id))
     await menu_service.delete_menu(id=id)
