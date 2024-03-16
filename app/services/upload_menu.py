@@ -22,35 +22,42 @@ class UploadMenu():
             # Если выбранная Excel-строка относится к Меню, то обрабатываем её здесь:
             if ((not str(i[1]).isdigit()) and (str(i[1]) != 'nan')):
                 last_idm = str(int(i[0]))
-                test_data: dict[str, Any] = {'id_xls': str(int(i[0])), 'title': i[1], 'description': i[2]}
-                query = insert(MainMenu).values(**test_data).on_conflict_do_update(
+                data_menu: dict[str, Any] = {'title': i[1], 'description': i[2], 'id_xls': str(int(i[0])),}
+                query = insert(MainMenu).values(**data_menu).on_conflict_do_update(
                     constraint='uq_main_menu_id_xls',
-                    set_=test_data).returning(MainMenu.id)
+                    set_=data_menu).returning(MainMenu.id)
                 main_menu_id = (await self.db.execute(query)).scalar()
                 await self.db.commit()
                 set_of_menus.add(str(i[1]))
 
             # Если выбранная Excel-строка относится к Подменю, то обрабатываем её здесь:
-            if ((str(i[1]).isdigit()) and (not str(i[2]).isdigit())):
+            if ((str(i[1]).isdigit()) and (not str(i[2]).isdigit()) and (i[2] != 'nan')):
                 last_idsm = str(int(i[1]))
-                test_data = {'id_xls': last_idm + str(int(i[1])), 'title': i[2],
-                             'description': i[3], 'main_menu_id': main_menu_id}
-                query = insert(SubMenu).values(**test_data).on_conflict_do_update(
+                data_submenu = {'title': i[2], 'description': i[3], 
+                             'main_menu_id': main_menu_id,
+                             'id_xls': last_idm + str(int(i[1]))}
+                query = insert(SubMenu).values(**data_submenu).on_conflict_do_update(
                     constraint='uq_sub_menu_id_xls',
-                    set_=test_data).returning(SubMenu.id)
+                    set_=data_submenu).returning(SubMenu.id)
                 sub_menu_id = (await self.db.execute(query)).scalar()
                 await self.db.commit()
                 set_of_submenus.add(str(i[2]))
 
             # Если выбранная Excel-строка относится к Блюдам, то обрабатываем её здесь:
             if ((str(i[2]).isdigit()) and (not str(i[3]).isdigit()) and (i[3] != 'nan')):
-                test_data = {'id_xls': last_idm + last_idsm + str(int(i[2])), 'title': i[3], 'description': i[4],
-                             'price': i[5], 'sub_menu_id': sub_menu_id}
-                query = insert(Dishes).values(**test_data).on_conflict_do_update(
+                data_dish = {'title': i[3], 'description': i[4],
+                             'price': i[5], 'sub_menu_id': sub_menu_id,
+                             'id_xls': last_idm + last_idsm + str(int(i[2]))}
+                query = insert(Dishes).values(**data_dish).on_conflict_do_update(
                     constraint='uq_dish_id_xls',
-                    set_=test_data).returning(Dishes.id)
+                    set_=data_dish).returning(Dishes.id)
+                dish_id = (await self.db.execute(query)).scalar()
                 await self.db.commit()
                 set_of_dishes.add(str(i[3]))
+
+        # print("\n set_of_menus: ", set_of_menus)
+        # print("\n set_of_submenus: ", set_of_submenus)
+        # print("\n set_of_dishes: ", set_of_dishes)
 
         await self.db.execute(delete(MainMenu).where(not_(MainMenu.title.in_(set_of_menus))))
         await self.db.commit()

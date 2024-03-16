@@ -21,3 +21,10 @@ def my_first_task():
             upload_menu = UploadMenu(db=db)
             await upload_menu.run()
     loop.run_until_complete(task_my_first_task())
+
+
+# @celery.task()
+# def my_first_task():
+#     async def task_my_first_task():
+#         print("Celery task is running ...")
+#     loop.run_until_complete(task_my_first_task())
