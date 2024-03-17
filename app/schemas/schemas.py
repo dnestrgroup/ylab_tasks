@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import BaseModel
 
 
@@ -11,8 +10,8 @@ class MenuResponse(BaseModel):
     id: str
     title: str
     description: str
-    submenus_count: Optional[int]
-    dishes_count: Optional[int]
+    submenus_count: int | None
+    dishes_count: int | None
 
 
 class CreateSubMenuRequest(BaseModel):
@@ -24,7 +23,7 @@ class SubMenuResponse(BaseModel):
     id: str
     title: str
     description: str
-    dishes_count: Optional[int]
+    dishes_count: int | None
 
 
 class CreateDishesRequest(BaseModel):

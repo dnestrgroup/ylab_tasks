@@ -1,10 +1,11 @@
 from typing import AsyncIterator
+
 from sqlalchemy import MetaData
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 
 connection_string = (
-    "postgresql+asyncpg://postgres:postgres@postgres_cmenu_d:5432/postgres"
+    'postgresql+asyncpg://postgres:postgres@postgres_cmenu_d:5432/postgres'
 )
 
 async_engine = create_async_engine(
@@ -23,6 +24,7 @@ async_session = async_sessionmaker(
 
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
+
 
 async def get_db() -> AsyncIterator[AsyncSession]:
     db = async_session()

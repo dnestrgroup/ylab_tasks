@@ -1,0 +1,40 @@
+[tool.pylint.message_control]
+disable=['missing-module-docstring', 'missing-function-docstring', 'missing-class-docstring','unused-argument', 'too-few-public-methods', 'fixme', 'unused-argument','W0212']
+extension-pkg-whitelist = "pydantic, lxml"
+
+[tool.pylint.format]
+max-line-length=120
+
+[tool.pylint.basic]
+argument-rgx='[a-z0-9_]{2,30}$'
+variable-rgx='[a-zA-Z0-9_]{2,30}$'
+good-names=['i', 'j', 'k', 'v', 'ex', 'Run', '_']
+
+[tool.pylint.design]
+max-args=9
+max-locals=20
+
+[tool.pylint.master]
+ignore='migrations'
+disable=['missing-docstring, C0301','duplicate-code','unused-argument', 'W0612', 'R0913']
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+ignore_missing_imports = true
+strict = true
+warn_return_any = false
+disallow_untyped_calls = false
+disallow_subclassing_any = false
+
+[[tool.mypy.overrides]]
+module = "src.main"
+disallow_untyped_decorators = false
+
+[tool.black]
+line-length = 120
+target-version = ['py310']
+
+[tool.flake8]
+max-line-length = 120

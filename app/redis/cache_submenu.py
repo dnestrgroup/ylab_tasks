@@ -1,10 +1,12 @@
 import json
+
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.redis.confredis import redis_client
-from app.repositories.rep_menu import RepositoriesMenus
-from app.schemas.schemas import CreateSubMenuRequest, SubMenuResponse
 from app.repositories.rep_submenu import RepositoriesSubMenus
+from app.schemas.schemas import CreateSubMenuRequest, SubMenuResponse
+
 
 class SubMenuService:
     def __init__(self, db: AsyncSession):
@@ -18,17 +20,15 @@ class SubMenuService:
         repo_sm = RepositoriesSubMenus(self.db)
         list_menu = await repo_sm.get_list(id=id_menu)
         submenus_for_redis = [submenu.json() for submenu in list_menu]
-        redis_client.setex(
-            '/api/v1/menus/{id_menu}/submenus', 60, json.dumps(submenus_for_redis))
+        redis_client.setex('/api/v1/menus/{id_menu}/submenus', 60, json.dumps(submenus_for_redis))
         return list_menu
 
     async def get_one_submenu_by_id(self, id_menu: int, id_submenu: int) -> SubMenuResponse:
-        cached_data = redis_client.get(
-            '/api/v1/menus/' + str(id_menu) + '/submenus/' + str(id_submenu))
+        cached_data = redis_client.get('/api/v1/menus/' + str(id_menu) + '/submenus/' + str(id_submenu))
         if cached_data:
             return SubMenuResponse(**json.loads(cached_data))
         repo_sm = RepositoriesSubMenus(self.db)
-        res = await repo_sm.get(id_menu, id_submenu)
+        res = await repo_sm.get(id_submenu)
         if res:
             redis_client.setex('/api/v1/menus/' + str(id_menu) + '/submenus/' + str(id_submenu), 1000, res.json())
             return res
@@ -36,12 +36,8 @@ class SubMenuService:
 
     async def update_submenu(self, data: CreateSubMenuRequest, id_menu: int, id_submenu: int) -> SubMenuResponse:
         repo_sm = RepositoriesSubMenus(self.db)
-        res = await repo_sm.update(id_menu, id_submenu, data)
-        response_sm = SubMenuResponse(
-            id=str(res.id),
-            title=res.title,
-            description=res.description,
-            dishes_count=0)
+        res = await repo_sm.update(id_submenu, data)
+        response_sm = SubMenuResponse(id=str(res.id), title=res.title, description=res.description, dishes_count=0)
         redis_client.setex('/api/v1/menus/' + str(id_menu) + '/submenus/' + str(id_submenu), 1000, response_sm.json())
         return res
 
