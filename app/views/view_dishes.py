@@ -17,6 +17,7 @@ router = APIRouter()
 @router.get(  # type: ignore
     '/api/v1/menus/{id_menu}/submenus/{id_submenu}/dishes',
     response_model=list[DishesResponse],
+    summary='Метод получения списка блюд',
 )
 async def get_dishes(id_menu: int, id_submenu: int, db: AsyncSession = Depends(get_db)) -> list[DishesResponse]:
     dishes_service = DishesService(db=db)
@@ -27,6 +28,7 @@ async def get_dishes(id_menu: int, id_submenu: int, db: AsyncSession = Depends(g
 @router.get(  # type: ignore
     '/api/v1/menus/{id_menu}/submenus/{id_submenu}/dishes/{id_dishes}',
     response_model=DishesResponse,
+    summary='Метод получения блюда по id',
 )
 async def get_dish(id_menu: int, id_submenu: int, id_dishes: int, db: AsyncSession = Depends(get_db)) -> DishesResponse:
     dishes_service = DishesService(db=db)
@@ -37,6 +39,7 @@ async def get_dish(id_menu: int, id_submenu: int, id_dishes: int, db: AsyncSessi
 @router.patch(  # type: ignore
     '/api/v1/menus/{id_menu}/submenus/{id_submenu}/dishes/{id_dishes}',
     response_model=DishesResponse,
+    summary='Метод обновления блюда',
 )
 async def patch_dish(
     background_tasks: BackgroundTasks,
@@ -59,6 +62,7 @@ async def patch_dish(
     '/api/v1/menus/{id_menu}/submenus/{id_submenu}/dishes',
     response_model=DishesResponse,
     status_code=201,
+    summary='Метод создания блюда',
 )
 async def create_dish(
     data: CreateDishesRequest,
@@ -72,6 +76,7 @@ async def create_dish(
 
 @router.delete(  # type: ignore
     '/api/v1/menus/{id_menu}/submenus/{id_submenu}/dishes/{id_dishes}',
+    summary='Метод удаления блюда',
 )
 async def delete_dishes(
     background_tasks: BackgroundTasks,

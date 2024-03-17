@@ -14,21 +14,29 @@ router = APIRouter()
 ################################
 
 
-@router.get('/api/v1/menus/{id}/submenus', response_model=list[SubMenuResponse])  # type: ignore
+@router.get(  # type: ignore
+    '/api/v1/menus/{id}/submenus', response_model=list[SubMenuResponse], summary='Метод получения списка подменю'
+)
 async def get_submenus(id: int, db: AsyncSession = Depends(get_db)) -> list[SubMenuResponse]:
     submenu_service = SubMenuService(db=db)
     response = await submenu_service.get_list_submenus(id_menu=id)
     return response
 
 
-@router.get('/api/v1/menus/{id_menu}/submenus/{id_submenu}', response_model=SubMenuResponse)  # type: ignore
+@router.get(  # type: ignore
+    '/api/v1/menus/{id_menu}/submenus/{id_submenu}',
+    response_model=SubMenuResponse,
+    summary='Метод получения подменю по id',
+)
 async def get_submenu(id_menu: int, id_submenu: int, db: AsyncSession = Depends(get_db)) -> SubMenuResponse:
     submenu_service = SubMenuService(db=db)
     response = await submenu_service.get_one_submenu_by_id(id_menu=id_menu, id_submenu=id_submenu)
     return response
 
 
-@router.patch('/api/v1/menus/{id_menu}/submenus/{id_submenu}', response_model=SubMenuResponse)  # type: ignore
+@router.patch(  # type: ignore
+    '/api/v1/menus/{id_menu}/submenus/{id_submenu}', response_model=SubMenuResponse, summary='Метод обновления подменю'
+)
 async def patch_submenu(
     background_tasks: BackgroundTasks,
     id_menu: int,
@@ -42,7 +50,12 @@ async def patch_submenu(
     return response
 
 
-@router.post('/api/v1/menus/{id_menu}/submenus', response_model=SubMenuResponse, status_code=201)  # type: ignore
+@router.post(  # type: ignore
+    '/api/v1/menus/{id_menu}/submenus',
+    response_model=SubMenuResponse,
+    status_code=201,
+    summary='Метод создания подменю',
+)
 async def create_submenu(
     data: CreateSubMenuRequest, id_menu: int, db: AsyncSession = Depends(get_db)
 ) -> SubMenuResponse:
@@ -50,7 +63,7 @@ async def create_submenu(
     return await submenu_service.create_submenu(data=data, id_menu=id_menu)
 
 
-@router.delete('/api/v1/menus/{id_menu}/submenus/{id_submenu}')  # type: ignore
+@router.delete('/api/v1/menus/{id_menu}/submenus/{id_submenu}', summary='Метод удаления подменю')  # type: ignore
 async def delete_submenu(
     background_tasks: BackgroundTasks,
     id_menu: int,

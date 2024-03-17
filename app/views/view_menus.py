@@ -10,7 +10,6 @@ from app.redis.cache_menu import MenuService
 from app.repositories.rep_menu import RepositoriesMenus
 from app.schemas.schemas import CreateMenuRequest, MenuResponse
 from app.services.cache_invalidation import cache_invalidation
-from app.services.upload_menu import UploadMenu
 
 router = APIRouter()
 
@@ -19,17 +18,7 @@ router = APIRouter()
 ################################
 
 
-@router.get('/start')  # type: ignore
-async def start(db: AsyncSession = Depends(get_db)) -> str:
-    """
-    Ручка для экспорта данных из xlsx в базу данных
-    """
-    upload_menu = UploadMenu(db=db)
-    await upload_menu.run()
-    return 'start'
-
-
-@router.get('/all')  # type: ignore
+@router.get('/all', summary='Сложная структура данных из всех меню подменю и блюд (Дз №4)')  # type: ignore
 async def get_menus_all(db: AsyncSession = Depends(get_db)) -> list[dict[Any, list[dict[Any, list[dict[str, Any]]]]]]:
     menu_service = RepositoriesMenus(db=db)
     response = await menu_service.get_all()
@@ -43,7 +32,7 @@ async def get_menus(db: AsyncSession = Depends(get_db)) -> list[MenuResponse]:
     return response
 
 
-@router.get('/api/v1/menus/{id}', response_model=MenuResponse)  # type: ignore
+@router.get('/api/v1/menus/{id}', response_model=MenuResponse, summary='Метод получения меню по id')  # type: ignore
 async def get_menu(id: int, db: AsyncSession = Depends(get_db)) -> MenuResponse:
     query = select(MainMenu).filter(MainMenu.id == id)
     res = (await db.execute(query)).scalar_one_or_none()
@@ -68,13 +57,13 @@ async def get_menu(id: int, db: AsyncSession = Depends(get_db)) -> MenuResponse:
     raise HTTPException(status_code=404, detail='menu not found')
 
 
-@router.post('/api/v1/menus', response_model=MenuResponse, status_code=201)  # type: ignore
+@router.post('/api/v1/menus', response_model=MenuResponse, status_code=201, summary='Метод создания пункта меню')  # type: ignore
 async def create_menu(data: CreateMenuRequest, db: AsyncSession = Depends(get_db)) -> MenuResponse:
     menu_service = MenuService(db=db)
     return await menu_service.create_menu(data=data)
 
 
-@router.patch('/api/v1/menus/{id}', response_model=MenuResponse)  # type: ignore
+@router.patch('/api/v1/menus/{id}', response_model=MenuResponse, summary='Метод обновления пункта меню')  # type: ignore
 async def patch_menu(
     background_tasks: BackgroundTasks,
     id: int,
@@ -93,7 +82,7 @@ async def patch_menu(
     return MenuResponse(id=str(res[0]), title=res[1], description=res[2], submenus_count=None, dishes_count=None)
 
 
-@router.delete('/api/v1/menus/{id}')  # type: ignore
+@router.delete('/api/v1/menus/{id}', summary='Метод удаления пункта меню')  # type: ignore
 async def delete_menu(background_tasks: BackgroundTasks, id: int, db: AsyncSession = Depends(get_db)) -> None:
     menu_service = MenuService(db=db)
     background_tasks.add_task(cache_invalidation, '/api/v1/menus/' + str(id))
