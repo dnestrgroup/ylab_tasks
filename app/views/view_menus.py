@@ -18,7 +18,7 @@ router = APIRouter()
 ################################
 
 
-@router.get('/all', summary='Сложная структура данных из всех меню подменю и блюд (Дз №4)')  # type: ignore
+@router.get('/api/v1/all', summary='Сложная структура данных из всех меню подменю и блюд (Дз №4)')  # type: ignore
 async def get_menus_all(db: AsyncSession = Depends(get_db)) -> list[dict[Any, list[dict[Any, list[dict[str, Any]]]]]]:
     menu_service = RepositoriesMenus(db=db)
     response = await menu_service.get_all()
